@@ -74,10 +74,13 @@ export const actions: Actions = {
       return fail(400, { message: "请填写标题（最多120字）和正文（最多5000字）。", title, content });
     }
     const postedAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
-    await db
+    const result = await db
       .prepare("INSERT INTO teacher_reviews (teacher_id, title, content, posted_at_local) VALUES (?, ?, ?, ?)")
       .bind(teacher.id, title, content, postedAt)
       .run();
+    console.info(
+      JSON.stringify({ event: "review_added", reviewType: "teacher", reviewId: result.meta.last_row_id, teacherId: teacher.id }),
+    );
     redirect(303, `${url.pathname}?submitted=1`);
   },
 };

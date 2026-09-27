@@ -113,13 +113,16 @@ export const actions: Actions = {
     if (!section) return fail(400, { message: "请选择有效的课程班级。", ...values });
 
     const postedAt = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 19).replace("T", " ");
-    await db
+    const result = await db
       .prepare(`
         INSERT INTO course_reviews (lid, title, content, posted_at_local)
         VALUES (?, ?, ?, ?)
       `)
       .bind(lid, title, content, postedAt)
       .run();
+    console.info(
+      JSON.stringify({ event: "review_added", reviewType: "course", reviewId: result.meta.last_row_id, courseId: params.courseId, lid }),
+    );
 
     const destination = new URL(url.pathname, url);
     destination.searchParams.set("lid", lid);
