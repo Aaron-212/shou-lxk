@@ -1,11 +1,9 @@
 <script lang="ts">
 import "../app.css";
 import { BookOpen } from "@lucide/svelte";
-import { Button } from "$lib/components/ui/button";
 import type { Snippet } from "svelte";
-import type { LayoutData } from "./$types";
 
-let { children, data }: { children: Snippet; data: LayoutData } = $props();
+let { children }: { children: Snippet } = $props();
 </script>
 
 <nav class="border-b border-border bg-background" aria-label="主导航">
@@ -16,14 +14,6 @@ let { children, data }: { children: Snippet; data: LayoutData } = $props();
       >
       <span>SHOU LXK</span>
     </a>
-    <div class="flex items-center gap-2">
-      {#if data.hasSessionCookie}
-        <Button href={data.accountUrl} variant="outline" size="sm">账号</Button>
-      {:else}
-        <Button href={data.signInUrl} variant="outline" size="sm">登录</Button>
-        <Button href={data.registerUrl} size="sm">注册</Button>
-      {/if}
-    </div>
   </div>
 </nav>
 

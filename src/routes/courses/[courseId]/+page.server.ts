@@ -1,6 +1,6 @@
 import { withTeachers } from "$lib/server/teachers";
 import { error, fail, redirect } from "@sveltejs/kit";
-import { isAuthenticated } from "$lib/server/auth";
+import { verifyTurnstile } from "$lib/server/turnstile";
 import type { Actions, PageServerLoad } from "./$types";
 
 const PAGE_SIZE = 20;
@@ -15,7 +15,7 @@ type Review = {
   posted_at_local: string;
 };
 
-export const load: PageServerLoad = async ({ params, platform, url, parent }) => {
+export const load: PageServerLoad = async ({ params, platform, url }) => {
   const db = platform?.env.DB;
   if (!db) error(503, "The course database is unavailable.");
 
@@ -66,7 +66,6 @@ export const load: PageServerLoad = async ({ params, platform, url, parent }) =>
     .bind(...reviewValues, PAGE_SIZE, (page - 1) * PAGE_SIZE)
     .all<Review>();
 
-  const { hasSessionCookie, signInUrl } = await parent();
   return {
     course,
     section,
@@ -77,14 +76,13 @@ export const load: PageServerLoad = async ({ params, platform, url, parent }) =>
     page,
     pages,
     pageSize: PAGE_SIZE,
-    hasSessionCookie,
-    signInUrl,
+    turnstileSiteKey: platform?.env.TURNSTILE_SITE_KEY ?? "",
     submitted: url.searchParams.get("submitted") === "1",
   };
 };
 
 export const actions: Actions = {
-  submitReview: async ({ params, platform, request, url }) => {
+  submitReview: async ({ params, platform, request, url, fetch }) => {
     const db = platform?.env.DB;
     if (!db) error(503, "The course database is unavailable.");
     const form = await request.formData();
@@ -95,8 +93,9 @@ export const actions: Actions = {
     const content = typeof submittedContent === "string" ? submittedContent.trim() : "";
     const values = { title, content, lid: typeof lid === "string" ? lid : "" };
 
-    if (!(await isAuthenticated(request, url, platform?.env.PLATFORM_AUTH))) {
-      return fail(401, { message: "请先登录，再提交评价。", ...values });
+    const verification = await verifyTurnstile(form, platform?.env.TURNSTILE_SECRET_KEY, url.hostname, fetch);
+    if (!verification.success) {
+      return fail(verification.status, { message: verification.message, ...values });
     }
 
     if (!title || title.length > 120 || !content || content.length > 5000) {
@@ -121,7 +120,13 @@ export const actions: Actions = {
       .bind(lid, title, content, postedAt)
       .run();
     console.info(
-      JSON.stringify({ event: "review_added", reviewType: "course", reviewId: result.meta.last_row_id, courseId: params.courseId, lid }),
+      JSON.stringify({
+        event: "review_added",
+        reviewType: "course",
+        reviewId: result.meta.last_row_id,
+        courseId: params.courseId,
+        lid,
+      }),
     );
 
     const destination = new URL(url.pathname, url);

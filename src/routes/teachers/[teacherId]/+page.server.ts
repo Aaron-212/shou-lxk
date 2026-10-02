@@ -1,5 +1,5 @@
 import { error, fail, redirect } from "@sveltejs/kit";
-import { isAuthenticated } from "$lib/server/auth";
+import { verifyTurnstile } from "$lib/server/turnstile";
 import type { Teacher } from "$lib/server/teachers";
 import type { Actions, PageServerLoad } from "./$types";
 
@@ -14,7 +14,7 @@ async function getTeacher(db: D1Database, id: string) {
   return teacher;
 }
 
-export const load: PageServerLoad = async ({ params, platform, url, parent }) => {
+export const load: PageServerLoad = async ({ params, platform, url }) => {
   const db = platform?.env.DB;
   if (!db) error(503, "The course database is unavailable.");
   const teacher = await getTeacher(db, params.teacherId);
@@ -41,7 +41,6 @@ export const load: PageServerLoad = async ({ params, platform, url, parent }) =>
     WHERE teacher_id = ? ORDER BY posted_at_local ${direction}, id ${direction} LIMIT ? OFFSET ?`)
     .bind(teacher.id, PAGE_SIZE, (page - 1) * PAGE_SIZE)
     .all<Review>();
-  const { hasSessionCookie, signInUrl } = await parent();
   return {
     teacher,
     courses: courses.results,
@@ -51,14 +50,13 @@ export const load: PageServerLoad = async ({ params, platform, url, parent }) =>
     page,
     pageSize: PAGE_SIZE,
     sort,
-    hasSessionCookie,
-    signInUrl,
+    turnstileSiteKey: platform?.env.TURNSTILE_SITE_KEY ?? "",
     submitted: url.searchParams.get("submitted") === "1",
   };
 };
 
 export const actions: Actions = {
-  submitReview: async ({ params, platform, request, url }) => {
+  submitReview: async ({ params, platform, request, url, fetch }) => {
     const db = platform?.env.DB;
     if (!db) error(503, "The course database is unavailable.");
     const form = await request.formData();
@@ -66,8 +64,9 @@ export const actions: Actions = {
     const rawContent = form.get("content");
     const title = typeof rawTitle === "string" ? rawTitle.trim() : "";
     const content = typeof rawContent === "string" ? rawContent.trim() : "";
-    if (!(await isAuthenticated(request, url, platform?.env.PLATFORM_AUTH))) {
-      return fail(401, { message: "请先登录，再提交评价。", title, content });
+    const verification = await verifyTurnstile(form, platform?.env.TURNSTILE_SECRET_KEY, url.hostname, fetch);
+    if (!verification.success) {
+      return fail(verification.status, { message: verification.message, title, content });
     }
     const teacher = await getTeacher(db, params.teacherId);
     if (!title || title.length > 120 || !content || content.length > 5000) {
@@ -79,7 +78,12 @@ export const actions: Actions = {
       .bind(teacher.id, title, content, postedAt)
       .run();
     console.info(
-      JSON.stringify({ event: "review_added", reviewType: "teacher", reviewId: result.meta.last_row_id, teacherId: teacher.id }),
+      JSON.stringify({
+        event: "review_added",
+        reviewType: "teacher",
+        reviewId: result.meta.last_row_id,
+        teacherId: teacher.id,
+      }),
     );
     redirect(303, `${url.pathname}?submitted=1`);
   },

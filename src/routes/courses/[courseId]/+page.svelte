@@ -1,23 +1,23 @@
 <script lang="ts">
-  import TeacherLinks from "$lib/components/teacher-links.svelte";
-  import BackToList from "$lib/components/back-to-list.svelte";
-  import { goto } from "$app/navigation";
-  import * as Select from "$lib/components/ui/select";
-  import { MessageSquareText } from "@lucide/svelte";
-  import { Button } from "$lib/components/ui/button";
-  import { Separator } from "$lib/components/ui/separator";
-  import PagePagination from "$lib/components/page-pagination.svelte";
-  import ReviewSendingCard from "$lib/components/review-sending-card.svelte";
-  import type { ActionData, PageData } from "./$types";
+import TeacherLinks from "$lib/components/teacher-links.svelte";
+import BackToList from "$lib/components/back-to-list.svelte";
+import { goto } from "$app/navigation";
+import * as Select from "$lib/components/ui/select";
+import { MessageSquareText } from "@lucide/svelte";
+import { Button } from "$lib/components/ui/button";
+import { Separator } from "$lib/components/ui/separator";
+import PagePagination from "$lib/components/page-pagination.svelte";
+import ReviewSendingCard from "$lib/components/review-sending-card.svelte";
+import type { ActionData, PageData } from "./$types";
 
-  let { data, form }: { data: PageData; form: ActionData } = $props();
+let { data, form }: { data: PageData; form: ActionData } = $props();
 
-  const pageUrl = (page: number, sort = data.sort) => {
-    const params = new URLSearchParams({ page: String(page) });
-    if (sort === "oldest") params.set("sort", sort);
-    if (data.section) params.set("lid", data.section.lid);
-    return `?${params}`;
-  };
+const pageUrl = (page: number, sort = data.sort) => {
+  const params = new URLSearchParams({ page: String(page) });
+  if (sort === "oldest") params.set("sort", sort);
+  if (data.section) params.set("lid", data.section.lid);
+  return `?${params}`;
+};
 </script>
 
 <svelte:head>
@@ -52,9 +52,7 @@
   {#if data.sections.length}
     <ReviewSendingCard
       heading="写评价"
-      description="评价匿名展示。登录仅用于防止垃圾内容。"
-      hasSessionCookie={data.hasSessionCookie}
-      signInUrl={data.signInUrl}
+      turnstileSiteKey={data.turnstileSiteKey}
       {form}
       sections={data.sections}
       selectedLid={data.section?.lid}
@@ -114,6 +112,13 @@
   {/if}
 
   {#if data.pages > 1}
-    <PagePagination count={data.total} perPage={data.pageSize} page={data.page} label="评价页面" {pageUrl} replaceState />
+    <PagePagination
+      count={data.total}
+      perPage={data.pageSize}
+      page={data.page}
+      label="评价页面"
+      {pageUrl}
+      replaceState
+    />
   {/if}
 </main>

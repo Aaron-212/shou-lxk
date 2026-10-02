@@ -5,7 +5,6 @@
   "assets": { "directory": ".svelte-kit/cloudflare", "binding": "ASSETS" },
   "compatibility_date": "2026-09-24",
   "compatibility_flags": ["nodejs_compat"],
-  "services": [{ "binding": "PLATFORM_AUTH", "service": "aaron212-idp", "entrypoint": "PlatformAuth" }],
   "d1_databases": [
     {
       "binding": "DB",

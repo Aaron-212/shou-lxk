@@ -9,18 +9,8 @@ declare global {
     interface Platform {
       env: {
         DB: D1Database;
-        PLATFORM_AUTH: {
-          authenticate(cookie: string): Promise<{
-            user: {
-              id: string;
-              email: string;
-              name: string;
-              emailVerified: true;
-              role: "admin" | "user";
-            };
-            expiresAt: string;
-          } | null>;
-        };
+        TURNSTILE_SITE_KEY?: string;
+        TURNSTILE_SECRET_KEY?: string;
       };
     }
   }

@@ -13,11 +13,13 @@ pnpm dev
 
 Local development uses a local D1 database. See [SCHEMA.md](SCHEMA.md) for the schema, the archived snapshot import, and the migration. The Cloudflare database is `shou-lxk`, configured in `wrangler.jsonc`.
 
-## Authentication
+## Review spam protection
 
-The header links to [Aaron212 IdP](https://idp.aaron212.com) for sign-in and registration. On an HTTPS `aaron212.com` subdomain, the IdP returns users to the page they came from. The IdP shares its session cookie across those subdomains. Browsing pages use the cookie's presence only to choose whether to show the account link and review form; a stale cookie may still show those controls. The Worker verifies the cookie through the private `PlatformAuth` service binding only when a visitor submits a review. The binding targets the `aaron212-idp` Worker configured in the sibling IdP repo; both Workers must be deployed in the same Cloudflare account. Everyone can browse courses and reviews. Signed-in visitors can submit reviews; each review shows only a title, body, and server-set submission date. Account details are not saved with reviews.
+Anyone can submit course and teacher reviews after completing Cloudflare Turnstile. Both submission actions validate the token through Cloudflare's Siteverify API before writing a review. Missing, expired, reused, or invalid tokens are rejected. Reviews store only their title, body, and server-set submission date.
 
-The IdP does not accept localhost callback URLs, so the production sign-in and registration links do not return automatically to a local dev server. Local pages remain browsable without the IdP running.
+Create a managed Turnstile widget in the Cloudflare dashboard and allow the site's hostname. Configure `TURNSTILE_SITE_KEY` as a Worker environment variable and `TURNSTILE_SECRET_KEY` as a Worker secret before deploying. Only the site key is sent to the browser. Submissions are disabled when the site key is missing, and server validation fails closed if the secret is missing or verification is unavailable.
+
+For local development, copy `.dev.vars.example` to `.dev.vars`. It contains Cloudflare's public testing keys; never use these testing keys in production. See the [Turnstile testing documentation](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) for other test outcomes.
 
 ## Checks
 
@@ -28,4 +30,4 @@ pnpm lint
 pnpm build
 ```
 
-The database tests use Node.js 26's built-in SQLite to verify migration integrity, teacher search, review authentication and validation, pagination, and review-count triggers.
+The database tests use Node.js 26's built-in SQLite to verify migration integrity, teacher search, review spam protection and validation, pagination, and review-count triggers.

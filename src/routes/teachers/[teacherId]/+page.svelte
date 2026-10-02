@@ -56,13 +56,7 @@ const pageUrl = (page: number, sort = data.sort) => {
     </ul>
   </section>
 
-  <ReviewSendingCard
-    heading="评价教师"
-    description="分享对这位教师的教学体验。评价匿名展示，登录仅用于防止垃圾内容。"
-    hasSessionCookie={data.hasSessionCookie}
-    signInUrl={data.signInUrl}
-    {form}
-  />
+  <ReviewSendingCard heading="评价教师" turnstileSiteKey={data.turnstileSiteKey} {form} />
 
   <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
     <h2 class="text-lg font-semibold tracking-tight">同学评价</h2>
@@ -117,6 +111,13 @@ const pageUrl = (page: number, sort = data.sort) => {
   {/if}
 
   {#if data.pages > 1}
-    <PagePagination count={data.total} perPage={data.pageSize} page={data.page} label="评价页面" {pageUrl} replaceState />
+    <PagePagination
+      count={data.total}
+      perPage={data.pageSize}
+      page={data.page}
+      label="评价页面"
+      {pageUrl}
+      replaceState
+    />
   {/if}
 </main>
