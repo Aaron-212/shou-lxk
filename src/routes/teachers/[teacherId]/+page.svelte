@@ -24,12 +24,12 @@ const pageUrl = (page: number, sort = data.sort) => {
   <meta name="description" content={`Read reviews for ${data.teacher.name}.`} />
 </svelte:head>
 
-<main class="mx-auto max-w-4xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10">
+<main id="main-content" class="mx-auto w-full max-w-6xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10">
   <BackToList />
 
   <header class="mt-8 mb-8 sm:mt-10 sm:mb-10">
     <p class="mb-3 text-xs font-medium tracking-widest text-muted-foreground">教师评价</p>
-    <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">{data.teacher.name}</h1>
+    <h1 class="text-3xl font-semibold tracking-tight text-primary sm:text-4xl">{data.teacher.name}</h1>
   </header>
 
   {#if data.submitted}

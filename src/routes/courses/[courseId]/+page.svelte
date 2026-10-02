@@ -25,7 +25,7 @@ const pageUrl = (page: number, sort = data.sort) => {
   <meta name="description" content={`Read reviews for ${data.course.name}.`} />
 </svelte:head>
 
-<main class="mx-auto max-w-4xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10">
+<main id="main-content" class="mx-auto w-full max-w-6xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10">
   <BackToList />
 
   <header class="mt-8 mb-8 sm:mt-10 sm:mb-10">
@@ -33,7 +33,7 @@ const pageUrl = (page: number, sort = data.sort) => {
       课程评价 <span aria-hidden="true">/</span>
       {data.course.course_id}
     </p>
-    <h1 class="text-3xl font-semibold tracking-tight sm:text-4xl">{data.course.name}</h1>
+    <h1 class="text-3xl font-semibold tracking-tight text-primary sm:text-4xl">{data.course.name}</h1>
     {#if data.section}
       <p class="mt-3 text-base text-muted-foreground">授课教师 · <TeacherLinks teachers={data.section.teachers} /></p>
     {:else}
