@@ -1,13 +1,13 @@
 <script lang="ts">
 import { resolve } from "$app/paths";
-import BackToList from "$lib/components/back-to-list.svelte";
+import BackToList from "#lib/components/back-to-list.svelte";
 import { goto } from "$app/navigation";
-import * as Select from "$lib/components/ui/select";
+import * as Select from "#lib/components/ui/select/index.js";
 import { MessageSquareText } from "@lucide/svelte";
-import { Button } from "$lib/components/ui/button";
-import { Separator } from "$lib/components/ui/separator";
-import PagePagination from "$lib/components/page-pagination.svelte";
-import ReviewSendingCard from "$lib/components/review-sending-card.svelte";
+import { Button } from "#lib/components/ui/button/index.js";
+import { Separator } from "#lib/components/ui/separator/index.js";
+import PagePagination from "#lib/components/page-pagination.svelte";
+import ReviewSendingCard from "#lib/components/review-sending-card.svelte";
 import type { ActionData, PageData } from "./$types";
 
 let { data, form }: { data: PageData; form: ActionData } = $props();
@@ -67,7 +67,7 @@ const pageUrl = (page: number, sort = data.sort) => {
         value={data.sort}
         onValueChange={(value) => {
           if (value === "latest" || value === "oldest") {
-            void goto(pageUrl(1, value), { noScroll: true, keepFocus: true, replaceState: true });
+            void goto(pageUrl(1, value), { reset: false, replace: true });
           }
         }}
       >

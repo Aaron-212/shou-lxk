@@ -1,4 +1,4 @@
-import { withTeachers } from "$lib/server/teachers";
+import { withTeachers } from "#lib/server/teachers.js";
 import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
 

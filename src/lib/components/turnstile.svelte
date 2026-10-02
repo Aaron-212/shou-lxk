@@ -1,7 +1,7 @@
 <script lang="ts">
 import { page } from "$app/state";
-import { Button } from "$lib/components/ui/button";
-import { loadTurnstile } from "$lib/turnstile";
+import { Button } from "#lib/components/ui/button/index.js";
+import { loadTurnstile } from "#lib/turnstile.js";
 
 let { siteKey, verified = $bindable(false) }: { siteKey: string; verified?: boolean } = $props();
 let container: HTMLDivElement;

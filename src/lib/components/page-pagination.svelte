@@ -1,6 +1,6 @@
 <script lang="ts">
 import { goto } from "$app/navigation";
-import * as Pagination from "$lib/components/ui/pagination/index.js";
+import * as Pagination from "#lib/components/ui/pagination/index.js";
 
 let {
   count,
@@ -25,7 +25,7 @@ let {
   {page}
   aria-label={label}
   class="mt-6"
-  onPageChange={(nextPage) => goto(pageUrl(nextPage), { replaceState })}
+  onPageChange={(nextPage) => goto(pageUrl(nextPage), { replace: replaceState })}
 >
   {#snippet children({ pages, currentPage })}
     <Pagination.Content>

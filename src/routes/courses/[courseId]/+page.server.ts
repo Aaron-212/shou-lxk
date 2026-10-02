@@ -1,6 +1,6 @@
-import { withTeachers } from "$lib/server/teachers";
+import { withTeachers } from "#lib/server/teachers.js";
 import { error, fail, redirect } from "@sveltejs/kit";
-import { verifyTurnstile } from "$lib/server/turnstile";
+import { verifyTurnstile } from "#lib/server/turnstile.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 const PAGE_SIZE = 20;

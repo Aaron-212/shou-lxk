@@ -1,3 +1,6 @@
 allowBuilds:
   esbuild: true
   workerd: true
+minimumReleaseAgeExclude:
+  - "@sveltejs/adapter-cloudflare@8.0.0"
+  - "@sveltejs/kit@3.0.0"
