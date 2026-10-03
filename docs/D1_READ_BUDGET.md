@@ -113,7 +113,13 @@ pixi run pnpm benchmark:d1 --database .wrangler/state/v3/d1/miniflare-D1Database
 
 测试覆盖：最新评论双表交错/并列/空表、计数插入/删除/移动/回滚、48 组筛选排序与四个偏移的旧新一致性、页码规范化/越界/空结果、缓存跨参数命中/主机隔离/TTL/异常/失效竞态、课程和教师提交成功清缓存、Turnstile hostname/action 失败禁止写入。另一个独立 workerd 测试验证真实 Cache API 跨请求命中及写入后失效。Siteverify 网络返回在本地测试中模拟；未进行生产 Turnstile、生产缓存跨地区或实际计费验证。
 
-本次最终验证：`pixi run test` 11/11 通过，`pixi run check` 0 错误 / 0 警告，`pixi run lint`、`pixi run build` 和 `git diff --check` 均通过。本地实际数据库迁移记录为 `0001` 至 `0005`，`site_stats` 与上述数据量一致，`PRAGMA foreign_key_check` 返回空结果。测试有 Node 实验性 TypeScript stripping 提示，构建有终端颜色环境变量提示，均未导致失败。
+本次最终验证：`pixi run test` 12/12 通过，`pixi run check` 0 错误 / 0 警告，`pixi run lint`、`pixi run build` 和 `git diff --check` 均通过。本地实际数据库迁移记录为 `0001` 至 `0005`，`site_stats` 与上述数据量一致，`PRAGMA foreign_key_check` 返回空结果。测试有 Node 实验性 TypeScript stripping 提示，构建有终端颜色环境变量提示，均未导致失败。
+
+## 课程详情补充
+
+详情页使用事务维护的班级点评计数，避免重复 COUNT；相似课程沿学院/学分索引最多读取 48 个候选班级，再去重并排除当前课程，最多展示 5 门。仅为有限候选推荐，不保证全站热度排名。
+
+现有本地数据下，课程 `7109911` 的 `lid=850` 首页完整 loader 为 5 次查询 / 297 行读取，其中推荐查询读取 76 行；全部班级视图为 5 次 / 419 行。点评排序仍有随该课程点评量增长的成本。新增本地 D1 测试覆盖班级计数、删除后的计数一致性、推荐去重、无数据和错误班级、分页与写点评入口。
 
 ## 计数维护
 
@@ -133,10 +139,10 @@ PRAGMA optimize;
 
 ## 上线步骤（尚未执行）
 
-本地已备份后应用 `0005`；生产仍停留于 `0004`。待明确授权上线时执行下列步骤：
+本地已备份后应用 `0005`；生产上次确认停留于 `0004`。2026-10-03 已获准合并与上线，但远程迁移列表查询返回 D1 `7500`：今日免费读取额度耗尽，无法重新核实或执行迁移。正式部署尚未执行；必须等额度恢复、确认备份和迁移成功后再发布。
 
 1. 确认生产 D1 配额恢复并预留迁移预算。建索引、一次性 COUNT 回填及统计分析会消耗读取/写入；不要在免费额度已耗尽时反复重试。免费额度按 UTC 日重置，见上述 D1 pricing 文档。
-2. 导出生产备份并确认导出成功，然后先迁移、后部署。以下远程命令在本次工作中均未执行：
+2. 导出生产备份并确认导出成功，然后先迁移、后部署。以下远程变更命令尚未执行：
 
 ```powershell
 pixi run pnpm exec wrangler d1 export DB --remote --output .wrangler/shou-courses-before-0005.sql
