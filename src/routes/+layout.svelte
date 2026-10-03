@@ -1,6 +1,6 @@
 <script lang="ts">
 import "../app.css";
-import { BookOpen, GraduationCap, MessageSquareText } from "@lucide/svelte";
+import { BookOpen, GraduationCap, MessageSquareText, Search } from "@lucide/svelte";
 import { page } from "$app/state";
 import type { Snippet } from "svelte";
 let { children }: { children: Snippet } = $props();
@@ -11,24 +11,57 @@ let { children }: { children: Snippet } = $props();
   class="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:rounded-md focus:bg-background focus:p-3"
   >跳转到主要内容</a
 >
-<header class="border-b border-border bg-card">
-  <nav class="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6" aria-label="主导航">
-    <a href="/" class="flex items-center gap-3 no-underline">
-      <span class="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground"
+<header class="site-header sticky top-0 z-40 border-b">
+  <nav
+    class="mx-auto flex min-h-16 max-w-6xl flex-wrap items-center gap-3 px-4 py-2 sm:flex-nowrap sm:gap-5 sm:px-6"
+    aria-label="主导航"
+  >
+    <a href="/" class="flex shrink-0 items-center gap-3 no-underline">
+      <span class="site-brand-mark flex size-9 items-center justify-center rounded-lg"
         ><GraduationCap class="size-5" aria-hidden="true" /></span
       >
       <span class="flex flex-col gap-0.5"
-        ><span class="text-sm font-bold tracking-wide">SHOU LXK</span><span class="text-xs text-muted-foreground"
-          >上海海洋大学课程评价</span
+        ><span class="text-sm font-bold tracking-wide text-foreground">SHOU LXK</span><span
+          class="text-xs text-muted-foreground">上海海洋大学课程评价</span
         ></span
       >
     </a>
-    <a
-      href="/"
-      aria-current={page.url.pathname === "/" ? "page" : undefined}
-      class="flex min-h-16 items-center gap-2 border-b-2 border-primary px-2 text-sm font-medium text-primary"
-      ><BookOpen class="size-4" aria-hidden="true" />课程</a
+
+    <div class="order-3 flex w-full items-center gap-1 sm:order-2 sm:w-auto">
+      <a
+        href="/#latest-reviews"
+        aria-current={page.url.pathname === "/" && page.url.hash === "#latest-reviews" ? "page" : undefined}
+        class="site-nav-link flex min-h-9 items-center gap-2 rounded-md px-3 text-sm font-medium"
+        ><MessageSquareText class="size-4" aria-hidden="true" />点评</a
+      >
+      <a
+        href="/#course-catalog"
+        aria-current={page.url.pathname === "/" && page.url.hash === "#course-catalog" ? "page" : undefined}
+        class="site-nav-link flex min-h-9 items-center gap-2 rounded-md px-3 text-sm font-medium"
+        ><BookOpen class="size-4" aria-hidden="true" />课程</a
+      >
+    </div>
+
+    <form
+      action="/#course-catalog"
+      method="GET"
+      role="search"
+      class="top-search order-2 ml-auto flex min-w-0 flex-1 items-center overflow-hidden rounded-md sm:order-3 sm:max-w-90"
     >
+      <label for="global-search" class="sr-only">搜索课程或课程号</label>
+      <input
+        id="global-search"
+        name="q"
+        type="search"
+        placeholder="搜索课程或课程号"
+        class="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+      />
+      <button
+        type="submit"
+        class="flex size-9 shrink-0 items-center justify-center bg-primary text-primary-foreground transition-opacity hover:opacity-85"
+        aria-label="搜索"><Search class="size-4" aria-hidden="true" /></button
+      >
+    </form>
   </nav>
 </header>
 {@render children()}

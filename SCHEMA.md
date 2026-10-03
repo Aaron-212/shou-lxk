@@ -2,15 +2,23 @@
 
 [`schema.sql`](schema.sql) defines the current SQLite and Cloudflare D1 schema. All tables are `STRICT`. Course IDs and section `lid` values are `TEXT` to preserve source codes and leading zeroes. `credits`, `likes`, and `dislikes` are `INTEGER`; the two counters default to zero and must be nonnegative.
 
-| Table                     | Grain                                       | Rows after migrating the archived snapshot |
+| Table                     | Grain                                       | Rows in the 2026-10-02 archive             |
 | ------------------------- | ------------------------------------------- | -----------------------------------------: |
-| `courses`                 | One course code                             |                                      1,910 |
-| `course_section`          | One API section `lid`                       |                                      3,287 |
-| `teachers`                | One distinct normalized teacher name        |                                        971 |
-| `course_section_teachers` | One teacher assigned to a section           |                                      4,407 |
-| `course_reviews`          | One course review with a stable integer ID  |                                      5,631 |
+| `courses`                 | One course code                             |                                      1,909 |
+| `course_section`          | One API section `lid`                       |                                      3,286 |
+| `teachers`                | One distinct normalized teacher name        |                                        970 |
+| `course_section_teachers` | One teacher assigned to a section           |                                      4,406 |
+| `course_reviews`          | One course review with a stable integer ID  |                                      5,597 |
 | `teacher_reviews`         | One teacher review with a stable integer ID |                                          0 |
 | `category_options`        | One selectable category value               |                                         97 |
+
+The 2026-10-02 archive is `shou-lxk-full-2026-10-02.sql.zip`; the extracted SQL is kept under the ignored `.wrangler/shou-lxk-import-2026-10-02/` directory. The dump already contains the current schema and records `0001` through `0004` in `d1_migrations`, so import it directly into a new empty D1 and do not apply the four migrations again. A local import/compatibility check can use:
+
+```sh
+pixi run pnpm exec wrangler d1 execute shou-courses --local --file .wrangler/shou-lxk-import-2026-10-02/shou-lxk-full-2026-10-02.sql
+```
+
+The audited dump passes SQLite `integrity_check`, has zero foreign-key violations, and has 669 sections with multiple teachers. Its `course_section.review_count` sum is 5,597 and matches `course_reviews`. Review text is free-form user content; no separate reviewer identity, email, phone, URL, ID-card, or bank-card columns are present. Treat review content as potentially identifying text when exposing or exporting it.
 
 A section belongs to one course. Course reviews refer directly to sections through `lid`; `id` is an automatically assigned integer primary key. Reviews default to newest first by `posted_at_local`, with `id` breaking timestamp ties; readers can switch to oldest first. `posted_at_local` stores the source's UTC+8 wall-clock text. Teachers live in `teachers` with integer IDs and unique names. `course_section_teachers` links sections to one or more teachers, preserving their display order with `position`. `teacher_reviews` references `teachers.id`; these reviews never contribute to course-section review counts. The old `teacher_name` and `teacher_list_raw` columns are removed. Empty and missing attributes remain distinct (`''` and `NULL`).
 
@@ -25,12 +33,12 @@ Teacher identity is based on the exact normalized name because the source has no
 The original archive importer and SQL snapshot are in the sibling `StructureAnalysis-shou-laixk` repository. That snapshot still uses the old schema. To use it locally, import the snapshot first and then apply the migration:
 
 ```sh
-mise exec -- ./node_modules/.bin/wrangler d1 execute DB --local --file ../StructureAnalysis-shou-laixk/data/shou-coursecritic.sql
-mise exec -- ./node_modules/.bin/wrangler d1 migrations apply DB --local
+pixi run pnpm exec wrangler d1 execute DB --local --file ../StructureAnalysis-shou-laixk/data/shou-coursecritic.sql
+pixi run pnpm exec wrangler d1 migrations apply DB --local
 ```
 
-The Cloudflare database is `shou-lxk` in APAC, with binding `DB` and ID `8fd0140d-9e3e-435a-a42d-2e39574a7f84` in `wrangler.jsonc`. It was created from an export of `shou-coursecritic` and migrated with `0001_section_schema.sql`. The previously recorded remote snapshot contains 1,909 courses, 3,286 sections, 5,596 reviews, and 97 category options. The old database remains available as a rollback source.
+The new Cloudflare database is `shou-courses` in APAC, with binding `DB`, ID `9e6f10ee-4e0b-4b8c-8662-b598ba79f3ba`, and account ID `15ce34fcf3c0f4fc58e57f5d7cc10c21` in `wrangler.jsonc`. It was created empty for the 2026-10-02 archive and must be imported directly from the dump before use. The previously configured `shou-lxk` database ID `8fd0140d-9e3e-435a-a42d-2e39574a7f84` is not modified by this import; its accessibility in the target account has not been re-verified.
 
-The local archived snapshot migrated with `0004` contains 971 teachers and 4,407 section-teacher links, including 669 sections with multiple teachers. All 5,631 course reviews are retained. These counts describe the local archive, not a fresh audit of production.
+The previously migrated local snapshot contained 971 teachers, 4,407 section-teacher links, and 5,631 course reviews. Those counts describe that older archive; the 2026-10-02 dump has the audited counts above.
 
 Deploy the migration and application together during a maintenance window: the old application queries `reviews` and `teacher_name`, while the new application requires the new tables. Back up the remote database before applying migrations. This change has been applied locally; production migration and deployment are separate steps.

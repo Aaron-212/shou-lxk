@@ -1,6 +1,7 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "shou-lxk",
+  "account_id": "15ce34fcf3c0f4fc58e57f5d7cc10c21",
   "main": ".svelte-kit/cloudflare/_worker.js",
   "assets": { "directory": ".svelte-kit/cloudflare", "binding": "ASSETS" },
   "compatibility_date": "2026-09-24",
@@ -8,8 +9,8 @@
   "d1_databases": [
     {
       "binding": "DB",
-      "database_name": "shou-lxk",
-      "database_id": "8fd0140d-9e3e-435a-a42d-2e39574a7f84",
+      "database_name": "shou-courses",
+      "database_id": "9e6f10ee-4e0b-4b8c-8662-b598ba79f3ba",
     },
   ],
   "workers_dev": false,

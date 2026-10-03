@@ -1,0 +1,19 @@
+[workspace]
+name = "shou-lxk"
+version = "0.1.0"
+channels = ["conda-forge"]
+platforms = ["win-64"]
+
+[tasks]
+install = "pnpm install --frozen-lockfile"
+dev = "pnpm dev"
+build = "pnpm build"
+preview = "pnpm preview"
+check = "pnpm check"
+test = "pnpm test"
+lint = "pnpm lint"
+format = "pnpm format"
+
+[dependencies]
+nodejs = "26.*"
+pnpm = "12.*"

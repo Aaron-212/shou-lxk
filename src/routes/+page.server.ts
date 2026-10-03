@@ -14,6 +14,26 @@ type SectionCard = {
   review_count: number;
 };
 
+type LatestReview = {
+  id: number;
+  review_type: "course" | "teacher";
+  lid: string | null;
+  course_id: string | null;
+  course_name: string | null;
+  teacher_id: number | null;
+  teacher_name: string | null;
+  title: string;
+  content: string;
+  posted_at_local: string;
+};
+
+type SiteStats = {
+  courses: number;
+  sections: number;
+  reviews: number;
+  teachers: number;
+};
+
 type Option = { value: string };
 type CreditOption = { credits: number };
 
@@ -55,7 +75,7 @@ export const load: PageServerLoad = async ({ platform, url }) => {
   const requestedPage = Number(url.searchParams.get("page") ?? "1");
   const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? requestedPage : 1;
 
-  const [colleges, electiveTypes, attributes, credits] = await Promise.all([
+  const [colleges, electiveTypes, attributes, credits, latestReviews, stats] = await Promise.all([
     db
       .prepare(
         "SELECT value FROM category_options WHERE category_type = 'college' AND value <> 'N/A' ORDER BY position",
@@ -72,6 +92,34 @@ export const load: PageServerLoad = async ({ platform, url }) => {
       )
       .all<Option>(),
     db.prepare("SELECT DISTINCT credits FROM course_section ORDER BY credits").all<CreditOption>(),
+    db
+      .prepare(`
+        SELECT id, review_type, lid, course_id, course_name, teacher_id, teacher_name, title, content, posted_at_local
+        FROM (
+          SELECT r.id, 'course' AS review_type, r.lid, c.course_id, c.name AS course_name,
+            NULL AS teacher_id, NULL AS teacher_name, r.title, r.content, r.posted_at_local
+          FROM course_reviews AS r
+          JOIN course_section AS cs ON cs.lid = r.lid
+          JOIN courses AS c ON c.course_id = cs.course_id
+          UNION ALL
+          SELECT r.id, 'teacher' AS review_type, NULL AS lid, NULL AS course_id, NULL AS course_name,
+            t.id AS teacher_id, t.name AS teacher_name, r.title, r.content, r.posted_at_local
+          FROM teacher_reviews AS r
+          JOIN teachers AS t ON t.id = r.teacher_id
+        )
+        ORDER BY posted_at_local DESC, review_type ASC, id DESC
+        LIMIT 5
+      `)
+      .all<LatestReview>(),
+    db
+      .prepare(`
+        SELECT
+          (SELECT COUNT(*) FROM courses) AS courses,
+          (SELECT COUNT(*) FROM course_section) AS sections,
+          (SELECT COUNT(*) FROM course_reviews) + (SELECT COUNT(*) FROM teacher_reviews) AS reviews,
+          (SELECT COUNT(*) FROM teachers) AS teachers
+      `)
+      .first<SiteStats>(),
   ]);
 
   const clauses: string[] = [];
@@ -153,5 +201,7 @@ export const load: PageServerLoad = async ({ platform, url }) => {
       attributes: attributes.results.map((row) => row.value),
       credits: credits.results.map((row) => row.credits),
     },
+    latestReviews: latestReviews.results,
+    stats: stats ?? { courses: 0, sections: 0, reviews: 0, teachers: 0 },
   };
 };
