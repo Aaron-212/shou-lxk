@@ -152,7 +152,7 @@ pixi run check
 pixi run lint
 pixi run test
 pixi run build
-pixi run pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars --strict
+pixi run pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars --strict --var MAINTENANCE_MODE:false
 ```
 
 3. 少量访问首页、筛选和详情确认成功，观察实际 rows_read 与错误率；无需压测。新部署不能先于 `0005`，否则缺少 `site_stats` 会报错。保持生产 Turnstile 密钥及变量。

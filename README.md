@@ -128,7 +128,11 @@ pixi run pnpm benchmark:pages --database <本地SQLite文件路径>
 pixi run pnpm exec wrangler d1 export DB --remote --output .wrangler/shou-courses-before-0005.sql
 pixi run pnpm exec wrangler d1 migrations apply DB --remote
 pixi run build
-pixi run pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars --strict
+pixi run pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars --strict --var MAINTENANCE_MODE:false
 ```
 
 配置见 `wrangler.jsonc`。保留生产 Turnstile 变量和密钥。若启用 Workers Builds，`.node-version` 指定 Node.js 26，并在构建变量中设置 `PNPM_VERSION=12`。
+
+### 临时维护
+
+`MAINTENANCE_MODE=true` 时，服务端在加载数据与执行表单前返回不缓存的 503 维护页，暂停本网站的 D1 访问，不删除数据库或绑定。维护版可在迁移之前发布，但必须保持此开关开启。正常发布前应先成功备份、完成所需迁移，再显式传入 `--var MAINTENANCE_MODE:false`；`--keep-vars` 单独使用会保留维护状态。
