@@ -1,6 +1,6 @@
 <script lang="ts">
 import "../app.css";
-import { BookOpen, GraduationCap, MessageSquareText, Search } from "@lucide/svelte";
+import { BookOpen, GraduationCap, MessageSquareText, Search, House, Users } from "@lucide/svelte";
 import { page } from "$app/state";
 import type { Snippet } from "svelte";
 let { children }: { children: Snippet } = $props();
@@ -28,25 +28,23 @@ let { children }: { children: Snippet } = $props();
     </a>
 
     <div class="order-3 flex w-full items-center gap-1 sm:order-2 sm:w-auto">
-      <a
-        href="/#latest-reviews"
-        aria-current={page.url.pathname === "/" && page.url.hash === "#latest-reviews" ? "page" : undefined}
-        class="site-nav-link flex min-h-9 items-center gap-2 rounded-md px-3 text-sm font-medium"
-        ><MessageSquareText class="size-4" aria-hidden="true" />点评</a
-      >
-      <a
-        href="/#course-catalog"
-        aria-current={page.url.pathname === "/" && page.url.hash === "#course-catalog" ? "page" : undefined}
-        class="site-nav-link flex min-h-9 items-center gap-2 rounded-md px-3 text-sm font-medium"
-        ><BookOpen class="size-4" aria-hidden="true" />课程</a
-      >
+      {#each [{ href: "/", label: "首页", icon: House }, { href: "/reviews", label: "点评", icon: MessageSquareText }, { href: "/courses", label: "课程", icon: BookOpen }, { href: "/teachers", label: "老师", icon: Users }] as item}
+        <a
+          href={item.href}
+          aria-current={(item.href === "/" ? page.url.pathname === "/" : page.url.pathname.startsWith(item.href))
+            ? "page"
+            : undefined}
+          class="site-nav-link flex min-h-9 items-center gap-2 rounded-md px-3 text-sm font-medium"
+          ><item.icon class="size-4" aria-hidden="true" />{item.label}</a
+        >
+      {/each}
     </div>
 
     <form
-      action="/#course-catalog"
+      action="/courses"
       method="GET"
       role="search"
-      class="top-search order-2 ml-auto flex min-w-0 flex-1 items-center overflow-hidden rounded-md sm:order-3 sm:max-w-90"
+      class="top-search order-2 ml-auto flex min-w-0 flex-1 items-center overflow-hidden rounded-md sm:order-3 sm:max-w-72"
     >
       <label for="global-search" class="sr-only">搜索课程或课程号</label>
       <input
@@ -54,6 +52,7 @@ let { children }: { children: Snippet } = $props();
         name="q"
         type="search"
         placeholder="搜索课程或课程号"
+        maxlength="100"
         class="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground"
       />
       <button

@@ -2,6 +2,7 @@ import { getBindings } from "#lib/server/platform.js";
 import { withTeachers } from "#lib/server/teachers.js";
 import { error, fail, redirect } from "@sveltejs/kit";
 import { verifyTurnstile } from "#lib/server/turnstile.js";
+import { invalidateHomeReviews } from "#lib/server/home-cache.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 const PAGE_SIZE = 20;
@@ -18,7 +19,7 @@ type Review = {
 
 export const load: PageServerLoad = async ({ params, platform, url }) => {
   const db = getBindings(platform).DB;
-  if (!db) error(503, "The course database is unavailable.");
+  if (!db) error(503, "加载失败，请稍后重试。");
 
   const course = await db
     .prepare("SELECT course_id, name FROM courses WHERE course_id = ?")
@@ -85,7 +86,7 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
 export const actions: Actions = {
   submitReview: async ({ params, platform, request, url, fetch }) => {
     const db = getBindings(platform).DB;
-    if (!db) error(503, "The course database is unavailable.");
+    if (!db) error(503, "加载失败，请稍后重试。");
     const form = await request.formData();
     const lid = form.get("lid");
     const submittedTitle = form.get("title");
@@ -120,6 +121,7 @@ export const actions: Actions = {
       `)
       .bind(lid, title, content, postedAt)
       .run();
+    await invalidateHomeReviews(url);
     console.info(
       JSON.stringify({
         event: "review_added",
@@ -133,6 +135,6 @@ export const actions: Actions = {
     const destination = new URL(url.pathname, url);
     destination.searchParams.set("lid", lid);
     destination.searchParams.set("submitted", "1");
-    redirect(303, destination);
+    redirect(303, `${destination.pathname}${destination.search}`);
   },
 };
