@@ -1,3 +1,4 @@
+import { getBindings } from "#lib/server/platform.js";
 import { error, fail, redirect } from "@sveltejs/kit";
 import { verifyTurnstile } from "#lib/server/turnstile.js";
 import type { Teacher } from "#lib/server/teachers.js";
@@ -15,7 +16,7 @@ async function getTeacher(db: D1Database, id: string) {
 }
 
 export const load: PageServerLoad = async ({ params, platform, url }) => {
-  const db = platform?.env.DB;
+  const db = getBindings(platform).DB;
   if (!db) error(503, "The course database is unavailable.");
   const teacher = await getTeacher(db, params.teacherId);
   const courses = await db
@@ -50,21 +51,21 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
     page,
     pageSize: PAGE_SIZE,
     sort,
-    turnstileSiteKey: platform?.env.TURNSTILE_SITE_KEY ?? "",
+    turnstileSiteKey: getBindings(platform).TURNSTILE_SITE_KEY ?? "",
     submitted: url.searchParams.get("submitted") === "1",
   };
 };
 
 export const actions: Actions = {
   submitReview: async ({ params, platform, request, url, fetch }) => {
-    const db = platform?.env.DB;
+    const db = getBindings(platform).DB;
     if (!db) error(503, "The course database is unavailable.");
     const form = await request.formData();
     const rawTitle = form.get("title");
     const rawContent = form.get("content");
     const title = typeof rawTitle === "string" ? rawTitle.trim() : "";
     const content = typeof rawContent === "string" ? rawContent.trim() : "";
-    const verification = await verifyTurnstile(form, platform?.env.TURNSTILE_SECRET_KEY, url.hostname, fetch);
+    const verification = await verifyTurnstile(form, getBindings(platform).TURNSTILE_SECRET_KEY, url.hostname, fetch);
     if (!verification.success) {
       return fail(verification.status, { message: verification.message, title, content });
     }

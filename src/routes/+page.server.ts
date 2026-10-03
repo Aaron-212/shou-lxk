@@ -1,3 +1,4 @@
+import { getBindings } from "#lib/server/platform.js";
 import { withTeachers } from "#lib/server/teachers.js";
 import { error } from "@sveltejs/kit";
 import type { PageServerLoad } from "./$types";
@@ -40,7 +41,7 @@ type CreditOption = { credits: number };
 const textFilter = (value: string | null) => (value ?? "").trim().slice(0, 100);
 
 export const load: PageServerLoad = async ({ platform, url }) => {
-  const db = platform?.env.DB;
+  const db = getBindings(platform).DB;
   if (!db) error(503, "The course database is unavailable.");
 
   const filters = {
