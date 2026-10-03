@@ -1,7 +1,9 @@
 <script lang="ts">
-import { ArrowUpRight, MessageSquareText, UserRound } from "@lucide/svelte";
+import { ArrowUpRight, ChevronDown, MessageSquareText, UserRound } from "@lucide/svelte";
 import type { LatestReview } from "#lib/server/home-queries.js";
 let { review }: { review: LatestReview } = $props();
+let expanded = $state(false);
+const bodyId = $derived(`review-${review.review_type}-${review.id}-body`);
 const subject = $derived(review.review_type === "course" ? review.course_name : review.teacher_name);
 const href = $derived(
   review.review_type === "course"
@@ -28,9 +30,23 @@ const href = $derived(
   </div>
   <div class="review-content">
     {#if review.title}<h3 class="review-title text-base">{review.title}</h3>{/if}
-    <p class="line-clamp-4">{review.content}</p>
-    <a class="mt-4 inline-flex items-center gap-1 text-xs font-medium" {href}
-      >阅读完整点评 <ArrowUpRight class="size-3.5" aria-hidden="true" /></a
-    >
+    <p id={bodyId} class:line-clamp-4={!expanded}>{review.content}</p>
+    <div class="mt-4 flex flex-wrap items-center justify-between gap-3 text-xs font-medium">
+      <button
+        type="button"
+        class="inline-flex items-center gap-1 text-primary"
+        aria-expanded={expanded}
+        aria-controls={bodyId}
+        onclick={() => (expanded = !expanded)}
+      >
+        {expanded ? "收起全文" : "展开全文"}<ChevronDown
+          class={expanded ? "size-3.5 rotate-180" : "size-3.5"}
+          aria-hidden="true"
+        />
+      </button>
+      <a class="inline-flex items-center gap-1" {href}
+        >查看{review.review_type === "course" ? "课程" : "老师"}<ArrowUpRight class="size-3.5" aria-hidden="true" /></a
+      >
+    </div>
   </div>
 </article>

@@ -113,7 +113,7 @@ pixi run pnpm benchmark:d1 --database .wrangler/state/v3/d1/miniflare-D1Database
 
 测试覆盖：最新评论双表交错/并列/空表、计数插入/删除/移动/回滚、48 组筛选排序与四个偏移的旧新一致性、页码规范化/越界/空结果、缓存跨参数命中/主机隔离/TTL/异常/失效竞态、课程和教师提交成功清缓存、Turnstile hostname/action 失败禁止写入。另一个独立 workerd 测试验证真实 Cache API 跨请求命中及写入后失效。Siteverify 网络返回在本地测试中模拟；未进行生产 Turnstile、生产缓存跨地区或实际计费验证。
 
-本次最终验证：`pixi run test` 8/8 通过，`pixi run check` 0 错误 / 0 警告，`pixi run lint`、`pixi run build` 和 `git diff --check` 均通过。本地实际数据库迁移记录为 `0001` 至 `0005`，`site_stats` 与上述数据量一致，`PRAGMA foreign_key_check` 返回空结果。测试有 Node 实验性 TypeScript stripping 提示，构建有终端颜色环境变量提示，均未导致失败。
+本次最终验证：`pixi run test` 11/11 通过，`pixi run check` 0 错误 / 0 警告，`pixi run lint`、`pixi run build` 和 `git diff --check` 均通过。本地实际数据库迁移记录为 `0001` 至 `0005`，`site_stats` 与上述数据量一致，`PRAGMA foreign_key_check` 返回空结果。测试有 Node 实验性 TypeScript stripping 提示，构建有终端颜色环境变量提示，均未导致失败。
 
 ## 计数维护
 
