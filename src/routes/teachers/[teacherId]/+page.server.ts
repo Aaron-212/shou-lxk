@@ -1,6 +1,7 @@
 import { getBindings } from "#lib/server/platform.js";
 import { error, fail, redirect } from "@sveltejs/kit";
 import { verifyTurnstile } from "#lib/server/turnstile.js";
+import { invalidateHomeReviews } from "#lib/server/home-cache.js";
 import type { Teacher } from "#lib/server/teachers.js";
 import type { Actions, PageServerLoad } from "./$types";
 
@@ -17,7 +18,7 @@ async function getTeacher(db: D1Database, id: string) {
 
 export const load: PageServerLoad = async ({ params, platform, url }) => {
   const db = getBindings(platform).DB;
-  if (!db) error(503, "The course database is unavailable.");
+  if (!db) error(503, "加载失败，请稍后重试。");
   const teacher = await getTeacher(db, params.teacherId);
   const courses = await db
     .prepare(`SELECT c.course_id, c.name, cs.lid, cs.college, cs.credits
@@ -59,7 +60,7 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
 export const actions: Actions = {
   submitReview: async ({ params, platform, request, url, fetch }) => {
     const db = getBindings(platform).DB;
-    if (!db) error(503, "The course database is unavailable.");
+    if (!db) error(503, "加载失败，请稍后重试。");
     const form = await request.formData();
     const rawTitle = form.get("title");
     const rawContent = form.get("content");
@@ -78,6 +79,7 @@ export const actions: Actions = {
       .prepare("INSERT INTO teacher_reviews (teacher_id, title, content, posted_at_local) VALUES (?, ?, ?, ?)")
       .bind(teacher.id, title, content, postedAt)
       .run();
+    await invalidateHomeReviews(url);
     console.info(
       JSON.stringify({
         event: "review_added",

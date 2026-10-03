@@ -1,62 +1,134 @@
-# SHOU LXK
+<div align="center">
 
-A SvelteKit course browser backed by Cloudflare D1. The home page shows the five latest course and teacher reviews, a site overview with counts for courses, classes, reviews, and teachers, and a course catalog ranked by stored review counts. Search by course name or code, and filter by teacher, college, course type, credits, attribute, or minimum review count. Results support sorting and pagination. Select a section card to read its reviews, with instructor names and review pagination. Teacher names link to profiles listing their course sections and separate teacher reviews. Sections can have multiple teachers. Review text is not searchable.
+# 🎓 SHOU LXK · 海大课程评价
 
-Pixi manages the local Windows development environment from conda-forge, with Node.js 26 and pnpm 12. The `packageManager` field pins the project's pnpm release. Cloudflare Workers Builds reads Node.js 26 from `.node-version`; in the Worker dashboard, set **Settings > Build > Build Variables and Secrets** → `PNPM_VERSION=12` so dependency installation uses pnpm 12.
+**下一堂课，多一份参考。**
 
-## Run locally
+听听同学的课堂体验，找到适合自己的课程与老师。
 
-```sh
+[![立即访问](https://img.shields.io/badge/立即访问-LXK.SHOUMC.COM-319ddd?style=for-the-badge)](https://lxk.shoumc.com)
+[![GitHub Stars](https://img.shields.io/github/stars/Conduit-Club/SHOU-LXK?style=for-the-badge&color=e9b44c)](https://github.com/Conduit-Club/SHOU-LXK)
+
+![Svelte 5](https://img.shields.io/badge/Svelte_5-FF3E00?style=flat-square&logo=svelte&logoColor=white)
+![SvelteKit 3](https://img.shields.io/badge/SvelteKit_3-FF3E00?style=flat-square&logo=svelte&logoColor=white)
+![TypeScript 6](https://img.shields.io/badge/TypeScript_6-3178C6?style=flat-square&logo=typescript&logoColor=white)
+![Tailwind CSS 4](https://img.shields.io/badge/Tailwind_CSS_4-06B6D4?style=flat-square&logo=tailwindcss&logoColor=white)
+![Cloudflare Workers · D1](https://img.shields.io/badge/Cloudflare-Workers_·_D1-F38020?style=flat-square&logo=cloudflare&logoColor=white)
+
+[读点评](https://lxk.shoumc.com/reviews) · [找课程](https://lxk.shoumc.com/courses) · [找老师](https://lxk.shoumc.com/teachers) · [反馈问题](https://github.com/Conduit-Club/SHOU-LXK/issues)
+
+</div>
+
+![新版首页：最新点评、站点概览与快速入口](docs/images/homepage.png)
+
+> 截图来自本分支的本地生产构建，使用现有课程数据；生产效果以上线版本为准。README 的居中介绍、技术徽章及页面预览形式参考「今日海大吃什么」，网站右侧采用站点概览与快速入口布局。
+
+## 在这里可以做什么
+
+- **首页**：最新点评、最新收录老师、最新收录课程，各展示 5 条；每组及页底都有完整目录入口。目录无历史创建时间，因此“最新”按现有收录顺序展示，不代表最近开课或入职。
+- **点评**：浏览课程和教师点评，独立搜索标题与正文，支持分页。
+- **课程**：搜索名称或课程号，按学院、类型、授课教师、学分、属性和点评数量筛选。详情页先看课程信息和同学点评，点击“写点评”再展开表单；右侧展示教师、其他班级及同学院同学分的相似课程。
+- **老师**：独立搜索姓名，进入教师页查看授课信息与点评。
+- **顶部搜索**：仅搜索课程或课程号；点评与老师使用各自页面的搜索框。
+- **分享体验**：课程和教师页面均可提交点评，写入前由服务端验证 Cloudflare Turnstile。
+- **加载失败**：显示统一、无内部细节的提示，并可玩本地校园跑酷——戴眼镜的学生躲避教学楼、收集 GPA POINTS。空格、↑ 或轻点画面跳跃；积分与真实成绩无关。
+
+<details>
+<summary>看看加载失败页与小游戏</summary>
+
+![加载失败页与校园跑酷](docs/images/loading-failed.png)
+
+</details>
+
+<details>
+<summary>看看课程详情页</summary>
+
+![课程信息、同学点评与相似课程](docs/images/course-detail.png)
+
+仅展示数据库已有信息；相似课程从最多 48 个同学院、同学分班级中去重选取最多 5 门，不代表全站热度排名。
+
+</details>
+
+## 技术栈
+
+| 层次         | 实际使用                                                                 |
+| ------------ | ------------------------------------------------------------------------ |
+| 页面与服务端 | Svelte 5、SvelteKit 3、TypeScript 6，SSR 与渐进增强表单                  |
+| 样式与组件   | Tailwind CSS 4、shadcn-svelte、Bits UI、Lucide Svelte                    |
+| 构建与部署   | Vite 8、SvelteKit Cloudflare adapter 8、Wrangler 4、Cloudflare Workers   |
+| 数据与缓存   | Cloudflare D1 / SQLite、SQL 索引与计数触发器、Workers Cache API          |
+| 评论防滥用   | Cloudflare Turnstile，服务端 Siteverify / hostname / action 校验         |
+| 小游戏       | 原生 Canvas 2D 与 TypeScript，无远程游戏服务或额外图片依赖               |
+| 本地开发     | 原生 Windows / PowerShell 7，Pixi 管理 Node.js 26、pnpm 12               |
+| 检查与测试   | svelte-check、Oxlint、Oxfmt、Node test runner、Miniflare/workerd 本地 D1 |
+
+准确依赖版本见 [package.json](package.json)、[pnpm-lock.yaml](pnpm-lock.yaml) 与 [pixi.lock](pixi.lock)。本项目没有 React、Astro 或 R2 依赖，也没有账号、关注或星级评分功能。
+
+## 一次访问会读取多少行
+
+以下是现有本地数据（1,909 门课程、3,286 个课段、5,597 条点评、970 位教师）在 Miniflare/workerd 的**整页服务端加载**实测。包括 COUNT、列表、授课教师及公共数据查询，而非只计算缓存部分。
+
+| 页面第一页 | 缓存全冷：查询数 / 读取行 | 缓存命中：查询数 / 读取行 |
+| ---------- | ------------------------: | ------------------------: |
+| 首页       |                **4 / 32** |                 **0 / 0** |
+| 课程目录   |                 7 / 2,802 |                    3 / 87 |
+| 点评列表   |                    2 / 50 |                    2 / 50 |
+| 老师列表   |                    2 / 13 |                    2 / 13 |
+
+首页 32 行 = 最新点评 21 + 统计 1 + 课程 5 + 老师 5。原先无筛选 COUNT 的约 6,572 行扫描已替换为事务维护的单行统计读取，首页不再加载课程目录和筛选选项。
+
+缓存属于服务器的数据中心，并不属于某个用户：新用户也可能命中已有缓存，老用户也可能遇到过期或不同地区的冷缓存。首页数据缓存 60 秒；课程筛选项缓存 6 小时。评论提交成功后清除当前数据中心的最新评论与展示统计，其他中心最多滞后一个 TTL。目录列表与精确分页总数不缓存。
+
+课程、点评和姓名子串搜索仍有扫描成本。例如点评搜索“老师”本地为 5,655 行，不能将首页 32 行套用到搜索或深分页。关闭了悬停时的数据预加载，仅预加载代码，避免鼠标经过链接就触发查询。静态资源及小游戏不查询 D1。
+
+完整前后 SQL、执行计划、搜索成本和一致性取舍见 [D1_READ_BUDGET.md](docs/D1_READ_BUDGET.md) 与 [整页测量记录](docs/read-budget-pages.json)。这不是生产账单保证。
+
+## 本地运行
+
+```powershell
 pixi install
 pixi run install
 ```
 
-`pixi install` creates or updates the locked conda environment. `pixi run install` installs the JavaScript dependencies from `pnpm-lock.yaml`.
+Pixi 从 conda-forge 创建锁定环境，pnpm 根据 lockfile 安装依赖。使用本地 D1；完整 schema 与历史数据说明见 [SCHEMA.md](SCHEMA.md)。
 
-Complete the local D1 initialization below, then start the development server with:
-
-```sh
-pixi run dev
-```
-
-Local development uses a local D1 database. See [SCHEMA.md](SCHEMA.md) for the schema, archived snapshot, and migration details. The target Cloudflare D1 database is `shou-courses` (ID `9e6f10ee-4e0b-4b8c-8662-b598ba79f3ba`) in account `15ce34fcf3c0f4fc58e57f5d7cc10c21`, configured in `wrangler.jsonc`. Its 2026-10-02 archive has been imported and validated remotely: 1,909 courses, 3,286 sections, 970 teachers, 4,406 section-teacher links, 5,597 course reviews, 0 teacher reviews, 97 category options, four migration records, zero foreign-key violations, and matching review counts. Production is live at `https://lxk.shoumc.com`.
-
-The current workspace's local D1 has already been imported and passed its count checks. For a new checkout, initialize the local D1 before running `pixi run dev`. After obtaining `shou-lxk-full-2026-10-02.sql.zip`, extract it and import the SQL directly into the empty local database:
+现有工作区已导入数据并应用 `0005`。新检出需取得 `shou-lxk-full-2026-10-02.sql.zip`，导入到空本地数据库后再应用剩余迁移：
 
 ```powershell
 New-Item -ItemType Directory -Force .wrangler\shou-lxk-import-2026-10-02 | Out-Null
 bz x shou-lxk-full-2026-10-02.sql.zip -o:.wrangler/shou-lxk-import-2026-10-02 -y
-# If bz is unavailable, use PowerShell's built-in extractor instead:
-# Expand-Archive -LiteralPath shou-lxk-full-2026-10-02.sql.zip -DestinationPath .wrangler\shou-lxk-import-2026-10-02 -Force
-pixi run pnpm exec wrangler d1 execute shou-courses --local --file .wrangler/shou-lxk-import-2026-10-02/shou-lxk-full-2026-10-02.sql
+# 若 bz 不可用，可使用 Expand-Archive。
+pixi run pnpm exec wrangler d1 execute DB --local --file .wrangler/shou-lxk-import-2026-10-02/shou-lxk-full-2026-10-02.sql
+pixi run pnpm exec wrangler d1 migrations apply DB --local
+pixi run dev
 ```
 
-The archive already contains the current schema and migration records, so do not apply migrations `0001` through `0004` again. The full import and compatibility checks are documented in [SCHEMA.md](SCHEMA.md).
+该归档已包含 `0001` 至 `0004` 的迁移记录，不要重复执行它们。没有归档时，可在空库执行 `schema.sql` 建立空白演示库；不要再对其重放结构迁移。
 
-## Review spam protection
+本地提交测试可把 `.dev.vars.example` 复制为 `.dev.vars`，使用 Cloudflare 官方测试键；不要在生产使用测试键。生产的 `TURNSTILE_SITE_KEY` 是公开变量，`TURNSTILE_SECRET_KEY` 必须作为 Worker secret 保存。缺少配置或验证服务不可用时，提交验证失败关闭。
 
-Anyone can submit course and teacher reviews after completing Cloudflare Turnstile. Both submission actions validate the token through Cloudflare's Siteverify API before writing a review. Missing, expired, reused, or invalid tokens are rejected. Reviews store only their title, body, and server-set submission date.
-
-Create a managed Turnstile widget in the Cloudflare dashboard and allow the site's hostname. Configure `TURNSTILE_SITE_KEY` as a Worker environment variable and `TURNSTILE_SECRET_KEY` as a Worker secret before deploying. Only the site key is sent to the browser. Submissions are disabled when the site key is missing, and server validation fails closed if the secret is missing or verification is unavailable.
-
-For local development, copy `.dev.vars.example` to `.dev.vars`. It contains Cloudflare's public testing keys; never use these testing keys in production. See the [Turnstile testing documentation](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) for other test outcomes.
-
-## Deploy
-
-Production is deployed manually with Wrangler; this repository does not use Git-based automatic deployment. After installing dependencies and completing `pixi run build`, authenticate with Wrangler and run:
+## 检查与复现
 
 ```powershell
+pixi run check
+pixi run lint
+pixi run test
+pixi run build
+pixi run pnpm benchmark:d1 --database <本地SQLite文件路径>
+pixi run pnpm benchmark:pages --database <本地SQLite文件路径>
+```
+
+可用 `rg --files --hidden --no-ignore .wrangler/state -g '*.sqlite'` 查找本地数据库。基准脚本以只读事务复制本地数据到临时 Miniflare D1，绝不连接远程数据库。报告输出到 `.wrangler/read-budget/`。测试覆盖排序、筛选、分页、计数事务、真实 Cache API、Turnstile 拒绝路径、错误脱敏及跑酷规则。
+
+## 部署
+
+仓库不使用 Git 自动部署。应用需要先完成 `0005` 迁移；它添加索引与 `site_stats`，与旧应用兼容。备份、迁移成本、部署顺序和回退说明见 [上线步骤](docs/D1_READ_BUDGET.md#上线步骤尚未执行)。远程变更须由维护者明确决定。
+
+```powershell
+pixi run pnpm exec wrangler d1 export DB --remote --output .wrangler/shou-courses-before-0005.sql
+pixi run pnpm exec wrangler d1 migrations apply DB --remote
+pixi run build
 pixi run pnpm exec wrangler deploy --config wrangler.jsonc --keep-vars --strict
 ```
 
-The production `TURNSTILE_SECRET_KEY` is kept as a Worker secret and must be configured separately from the public `TURNSTILE_SITE_KEY` in `wrangler.jsonc`.
-
-## Checks
-
-```sh
-pixi run check
-pixi run lint
-pixi run build
-```
-
-The package's `test` script is available as `pixi run test`. This checkout currently does not include a `tests/` directory, so the command reports zero tests until test files are added.
+配置见 `wrangler.jsonc`。保留生产 Turnstile 变量和密钥。若启用 Workers Builds，`.node-version` 指定 Node.js 26，并在构建变量中设置 `PNPM_VERSION=12`。

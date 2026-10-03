@@ -2,12 +2,21 @@ import { getBindings } from "#lib/server/platform.js";
 import { withTeachers } from "#lib/server/teachers.js";
 import { error, fail, redirect } from "@sveltejs/kit";
 import { verifyTurnstile } from "#lib/server/turnstile.js";
+import { invalidateHomeReviews } from "#lib/server/home-cache.js";
 import type { Actions, PageServerLoad } from "./$types";
 
 const PAGE_SIZE = 20;
 
 type Course = { course_id: string; name: string };
-type Section = { lid: string };
+type Section = {
+  lid: string;
+  college: string;
+  elective_type: string;
+  credits: number;
+  attribute: string | null;
+  review_count: number;
+};
+type SimilarCourse = Section & { course_id: string; name: string };
 type Review = {
   lid: string;
   id: number;
@@ -18,7 +27,7 @@ type Review = {
 
 export const load: PageServerLoad = async ({ params, platform, url }) => {
   const db = getBindings(platform).DB;
-  if (!db) error(503, "The course database is unavailable.");
+  if (!db) error(503, "加载失败，请稍后重试。");
 
   const course = await db
     .prepare("SELECT course_id, name FROM courses WHERE course_id = ?")
@@ -27,7 +36,9 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
   if (!course) error(404, "Course not found.");
 
   const sections = await db
-    .prepare("SELECT lid FROM course_section WHERE course_id = ? ORDER BY lid")
+    .prepare(
+      "SELECT lid, college, elective_type, credits, attribute, review_count FROM course_section WHERE course_id = ? ORDER BY lid",
+    )
     .bind(course.course_id)
     .all<Section>();
 
@@ -38,16 +49,35 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
   const sectionFilter = section ? "AND ci.lid = ?" : "";
   const reviewValues = section ? [course.course_id, section.lid] : [course.course_id];
 
-  const countRow = await db
-    .prepare(`
-    SELECT COUNT(*) AS total
-    FROM course_reviews AS r
-    JOIN course_section AS ci ON ci.lid = r.lid
-    WHERE ci.course_id = ? ${sectionFilter}
-  `)
-    .bind(...reviewValues)
-    .first<{ total: number }>();
-  const total = countRow?.total ?? 0;
+  // These counters are maintained transactionally by the review triggers.
+  const total = section?.review_count ?? sectionChoices.reduce((sum, item) => sum + item.review_count, 0);
+  const recommendationBasis = section ?? sectionChoices[0] ?? null;
+  let similarCourses: SimilarCourse[] = [];
+  if (recommendationBasis?.college) {
+    // Bound the indexed candidate pool BEFORE joining/ranking. This is a small
+    // selection of related courses, not a full-catalog popularity ranking.
+    const { results } = await db
+      .prepare(`
+      WITH candidates AS MATERIALIZED (
+        SELECT lid, course_id, college, elective_type, credits, attribute, review_count
+        FROM course_section INDEXED BY course_section_college_credits_idx
+        WHERE college = ? AND credits = ? LIMIT 48
+      )
+      SELECT candidates.*, c.name FROM candidates
+      JOIN courses AS c ON c.course_id = candidates.course_id
+    `)
+      .bind(recommendationBasis.college, recommendationBasis.credits)
+      .all<SimilarCourse>();
+    const seen = new Set([course.course_id]);
+    similarCourses = results
+      .sort((a, b) => b.review_count - a.review_count || a.lid.localeCompare(b.lid))
+      .filter((item) => {
+        if (seen.has(item.course_id)) return false;
+        seen.add(item.course_id);
+        return true;
+      })
+      .slice(0, 5);
+  }
   const pages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   const requestedPage = Number(url.searchParams.get("page") ?? "1");
   const page = Number.isSafeInteger(requestedPage) && requestedPage > 0 ? Math.min(requestedPage, pages) : 1;
@@ -69,6 +99,9 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
 
   return {
     course,
+    similarCourses,
+    recommendationBasis,
+    writing: url.searchParams.get("write") === "1",
     section,
     sections: sectionChoices,
     reviews,
@@ -85,7 +118,7 @@ export const load: PageServerLoad = async ({ params, platform, url }) => {
 export const actions: Actions = {
   submitReview: async ({ params, platform, request, url, fetch }) => {
     const db = getBindings(platform).DB;
-    if (!db) error(503, "The course database is unavailable.");
+    if (!db) error(503, "加载失败，请稍后重试。");
     const form = await request.formData();
     const lid = form.get("lid");
     const submittedTitle = form.get("title");
@@ -120,6 +153,7 @@ export const actions: Actions = {
       `)
       .bind(lid, title, content, postedAt)
       .run();
+    await invalidateHomeReviews(url);
     console.info(
       JSON.stringify({
         event: "review_added",
@@ -133,6 +167,6 @@ export const actions: Actions = {
     const destination = new URL(url.pathname, url);
     destination.searchParams.set("lid", lid);
     destination.searchParams.set("submitted", "1");
-    redirect(303, destination);
+    redirect(303, `${destination.pathname}${destination.search}`);
   },
 };

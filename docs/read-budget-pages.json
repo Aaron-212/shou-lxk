@@ -1,0 +1,314 @@
+{
+  "measuredAt": "2026-10-03T08:38:31.636Z",
+  "runtime": "local Miniflare/workerd; complete route loaders; source read-only",
+  "counts": {
+    "courses": 1909,
+    "course_section": 3286,
+    "teachers": 970,
+    "course_section_teachers": 4406,
+    "course_reviews": 5597,
+    "teacher_reviews": 0,
+    "category_options": 97
+  },
+  "pages": [
+    {
+      "name": "home",
+      "path": "/",
+      "runs": [
+        {
+          "state": "cold",
+          "rowsRead": 32,
+          "queries": 4,
+          "statements": [
+            {
+              "sql": "\n  WITH course_latest AS (\n    SELECT id, lid, title, content, posted_at_local\n    FROM course_reviews \n    ORDER BY posted_at_local DESC, id DESC LIMIT 5\n  ), teacher_latest AS (\n    SELECT id, teacher_id, title, content, posted_at_local\n    FROM teacher_reviews \n    ORDER BY posted_at_local DESC, id DESC LIMIT 5\n  )\n  SELECT id, review_type, lid, course_id, course_name, teacher_id, teacher_name, title, content, posted_at_local\n  FROM (\n    SELECT r.id, 'course' AS review_type, r.lid, c.course_id, c.name AS course_name,\n      NULL AS teacher_id, NULL AS teacher_name, r.title, r.content, r.posted_at_local\n    FROM course_latest AS r\n    CROSS JOIN course_section AS cs ON cs.lid = r.lid\n    CROSS JOIN courses AS c ON c.course_id = cs.course_id\n    UNION ALL\n    SELECT r.id, 'teacher' AS review_type, NULL AS lid, NULL AS course_id, NULL AS course_name,\n      t.id AS teacher_id, t.name AS teacher_name, r.title, r.content, r.posted_at_local\n    FROM teacher_latest AS r\n    CROSS JOIN teachers AS t ON t.id = r.teacher_id\n  )\n  ORDER BY posted_at_local DESC, review_type ASC, id DESC\n  LIMIT 5\n",
+              "rowsRead": 21
+            },
+            {
+              "sql": "SELECT course_id, name FROM courses ORDER BY rowid DESC LIMIT 5",
+              "rowsRead": 5
+            },
+            {
+              "sql": "SELECT id, name FROM teachers ORDER BY id DESC LIMIT 5",
+              "rowsRead": 5
+            },
+            {
+              "sql": "SELECT courses, sections, reviews, teachers FROM site_stats WHERE id = 1",
+              "rowsRead": 1
+            }
+          ]
+        },
+        {
+          "state": "warm",
+          "rowsRead": 0,
+          "queries": 0,
+          "statements": []
+        }
+      ]
+    },
+    {
+      "name": "courses",
+      "path": "/courses",
+      "runs": [
+        {
+          "state": "cold",
+          "rowsRead": 2802,
+          "queries": 7,
+          "statements": [
+            {
+              "sql": "SELECT sections AS total FROM site_stats WHERE id = 1",
+              "rowsRead": 1
+            },
+            {
+              "sql": "SELECT value FROM category_options WHERE category_type = 'college' AND value <> 'N/A' ORDER BY position",
+              "rowsRead": 14
+            },
+            {
+              "sql": "SELECT value FROM category_options WHERE category_type = 'lessonType' AND value <> 'N/A' ORDER BY position",
+              "rowsRead": 5
+            },
+            {
+              "sql": "SELECT DISTINCT trim(attribute) AS value FROM course_section WHERE trim(attribute) <> '' ORDER BY value",
+              "rowsRead": 2681
+            },
+            {
+              "sql": "SELECT DISTINCT credits FROM course_section ORDER BY credits",
+              "rowsRead": 15
+            },
+            {
+              "sql": "SELECT cs.lid, c.course_id, c.name, cs.college, cs.elective_type, cs.credits, cs.review_count\n      FROM course_section AS cs CROSS JOIN courses AS c ON c.course_id = cs.course_id\n      \n      ORDER BY cs.review_count DESC, c.name COLLATE NOCASE ASC, c.course_id, cs.lid LIMIT ? OFFSET ?",
+              "rowsRead": 38
+            },
+            {
+              "sql": "SELECT st.lid, t.id, t.name\n      FROM course_section_teachers AS st JOIN teachers AS t ON t.id = st.teacher_id\n      WHERE st.lid IN (?,?,?,?,?,?,?,?,?,?,?,?)\n      ORDER BY st.lid, st.position, t.id",
+              "rowsRead": 48
+            }
+          ]
+        },
+        {
+          "state": "warm",
+          "rowsRead": 87,
+          "queries": 3,
+          "statements": [
+            {
+              "sql": "SELECT sections AS total FROM site_stats WHERE id = 1",
+              "rowsRead": 1
+            },
+            {
+              "sql": "SELECT cs.lid, c.course_id, c.name, cs.college, cs.elective_type, cs.credits, cs.review_count\n      FROM course_section AS cs CROSS JOIN courses AS c ON c.course_id = cs.course_id\n      \n      ORDER BY cs.review_count DESC, c.name COLLATE NOCASE ASC, c.course_id, cs.lid LIMIT ? OFFSET ?",
+              "rowsRead": 38
+            },
+            {
+              "sql": "SELECT st.lid, t.id, t.name\n      FROM course_section_teachers AS st JOIN teachers AS t ON t.id = st.teacher_id\n      WHERE st.lid IN (?,?,?,?,?,?,?,?,?,?,?,?)\n      ORDER BY st.lid, st.position, t.id",
+              "rowsRead": 48
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "reviews",
+      "path": "/reviews",
+      "runs": [
+        {
+          "state": "cold",
+          "rowsRead": 50,
+          "queries": 2,
+          "statements": [
+            {
+              "sql": "SELECT reviews AS total FROM site_stats WHERE id = 1",
+              "rowsRead": 1
+            },
+            {
+              "sql": "\n  WITH course_latest AS (\n    SELECT id, lid, title, content, posted_at_local\n    FROM course_reviews \n    ORDER BY posted_at_local DESC, id DESC LIMIT ?\n  ), teacher_latest AS (\n    SELECT id, teacher_id, title, content, posted_at_local\n    FROM teacher_reviews \n    ORDER BY posted_at_local DESC, id DESC LIMIT ?\n  )\n  SELECT id, review_type, lid, course_id, course_name, teacher_id, teacher_name, title, content, posted_at_local\n  FROM (\n    SELECT r.id, 'course' AS review_type, r.lid, c.course_id, c.name AS course_name,\n      NULL AS teacher_id, NULL AS teacher_name, r.title, r.content, r.posted_at_local\n    FROM course_latest AS r\n    CROSS JOIN course_section AS cs ON cs.lid = r.lid\n    CROSS JOIN courses AS c ON c.course_id = cs.course_id\n    UNION ALL\n    SELECT r.id, 'teacher' AS review_type, NULL AS lid, NULL AS course_id, NULL AS course_name,\n      t.id AS teacher_id, t.name AS teacher_name, r.title, r.content, r.posted_at_local\n    FROM teacher_latest AS r\n    CROSS JOIN teachers AS t ON t.id = r.teacher_id\n  )\n  ORDER BY posted_at_local DESC, review_type ASC, id DESC\n  LIMIT ? OFFSET ?\n",
+              "rowsRead": 49
+            }
+          ]
+        },
+        {
+          "state": "warm",
+          "rowsRead": 50,
+          "queries": 2,
+          "statements": [
+            {
+              "sql": "SELECT reviews AS total FROM site_stats WHERE id = 1",
+              "rowsRead": 1
+            },
+            {
+              "sql": "\n  WITH course_latest AS (\n    SELECT id, lid, title, content, posted_at_local\n    FROM course_reviews \n    ORDER BY posted_at_local DESC, id DESC LIMIT ?\n  ), teacher_latest AS (\n    SELECT id, teacher_id, title, content, posted_at_local\n    FROM teacher_reviews \n    ORDER BY posted_at_local DESC, id DESC LIMIT ?\n  )\n  SELECT id, review_type, lid, course_id, course_name, teacher_id, teacher_name, title, content, posted_at_local\n  FROM (\n    SELECT r.id, 'course' AS review_type, r.lid, c.course_id, c.name AS course_name,\n      NULL AS teacher_id, NULL AS teacher_name, r.title, r.content, r.posted_at_local\n    FROM course_latest AS r\n    CROSS JOIN course_section AS cs ON cs.lid = r.lid\n    CROSS JOIN courses AS c ON c.course_id = cs.course_id\n    UNION ALL\n    SELECT r.id, 'teacher' AS review_type, NULL AS lid, NULL AS course_id, NULL AS course_name,\n      t.id AS teacher_id, t.name AS teacher_name, r.title, r.content, r.posted_at_local\n    FROM teacher_latest AS r\n    CROSS JOIN teachers AS t ON t.id = r.teacher_id\n  )\n  ORDER BY posted_at_local DESC, review_type ASC, id DESC\n  LIMIT ? OFFSET ?\n",
+              "rowsRead": 49
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "teachers",
+      "path": "/teachers",
+      "runs": [
+        {
+          "state": "cold",
+          "rowsRead": 13,
+          "queries": 2,
+          "statements": [
+            {
+              "sql": "SELECT teachers AS total FROM site_stats WHERE id = 1",
+              "rowsRead": 1
+            },
+            {
+              "sql": "SELECT id, name FROM teachers  ORDER BY name, id LIMIT ? OFFSET ?",
+              "rowsRead": 12
+            }
+          ]
+        },
+        {
+          "state": "warm",
+          "rowsRead": 13,
+          "queries": 2,
+          "statements": [
+            {
+              "sql": "SELECT teachers AS total FROM site_stats WHERE id = 1",
+              "rowsRead": 1
+            },
+            {
+              "sql": "SELECT id, name FROM teachers  ORDER BY name, id LIMIT ? OFFSET ?",
+              "rowsRead": 12
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "course-search",
+      "path": "/courses?q=人工智能",
+      "runs": [
+        {
+          "state": "cold",
+          "rowsRead": 6855,
+          "queries": 7,
+          "statements": [
+            {
+              "sql": "SELECT COUNT(*) AS total FROM course_section AS cs  WHERE cs.course_id IN (\n      SELECT course_id FROM courses\n      WHERE instr(lower(name), lower(?)) > 0 OR instr(lower(course_id), lower(?)) > 0\n    )",
+              "rowsRead": 2005
+            },
+            {
+              "sql": "SELECT value FROM category_options WHERE category_type = 'college' AND value <> 'N/A' ORDER BY position",
+              "rowsRead": 14
+            },
+            {
+              "sql": "SELECT value FROM category_options WHERE category_type = 'lessonType' AND value <> 'N/A' ORDER BY position",
+              "rowsRead": 5
+            },
+            {
+              "sql": "SELECT DISTINCT trim(attribute) AS value FROM course_section WHERE trim(attribute) <> '' ORDER BY value",
+              "rowsRead": 2681
+            },
+            {
+              "sql": "SELECT DISTINCT credits FROM course_section ORDER BY credits",
+              "rowsRead": 15
+            },
+            {
+              "sql": "SELECT cs.lid, c.course_id, c.name, cs.college, cs.elective_type, cs.credits, cs.review_count\n      FROM course_section AS cs JOIN courses AS c ON c.course_id = cs.course_id\n      WHERE cs.course_id IN (\n      SELECT course_id FROM courses\n      WHERE instr(lower(name), lower(?)) > 0 OR instr(lower(course_id), lower(?)) > 0\n    )\n      ORDER BY cs.review_count DESC, c.name COLLATE NOCASE ASC, c.course_id, cs.lid LIMIT ? OFFSET ?",
+              "rowsRead": 2081
+            },
+            {
+              "sql": "SELECT st.lid, t.id, t.name\n      FROM course_section_teachers AS st JOIN teachers AS t ON t.id = st.teacher_id\n      WHERE st.lid IN (?,?,?,?,?,?,?,?,?,?,?,?)\n      ORDER BY st.lid, st.position, t.id",
+              "rowsRead": 54
+            }
+          ]
+        },
+        {
+          "state": "warm",
+          "rowsRead": 4140,
+          "queries": 3,
+          "statements": [
+            {
+              "sql": "SELECT COUNT(*) AS total FROM course_section AS cs  WHERE cs.course_id IN (\n      SELECT course_id FROM courses\n      WHERE instr(lower(name), lower(?)) > 0 OR instr(lower(course_id), lower(?)) > 0\n    )",
+              "rowsRead": 2005
+            },
+            {
+              "sql": "SELECT cs.lid, c.course_id, c.name, cs.college, cs.elective_type, cs.credits, cs.review_count\n      FROM course_section AS cs JOIN courses AS c ON c.course_id = cs.course_id\n      WHERE cs.course_id IN (\n      SELECT course_id FROM courses\n      WHERE instr(lower(name), lower(?)) > 0 OR instr(lower(course_id), lower(?)) > 0\n    )\n      ORDER BY cs.review_count DESC, c.name COLLATE NOCASE ASC, c.course_id, cs.lid LIMIT ? OFFSET ?",
+              "rowsRead": 2081
+            },
+            {
+              "sql": "SELECT st.lid, t.id, t.name\n      FROM course_section_teachers AS st JOIN teachers AS t ON t.id = st.teacher_id\n      WHERE st.lid IN (?,?,?,?,?,?,?,?,?,?,?,?)\n      ORDER BY st.lid, st.position, t.id",
+              "rowsRead": 54
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "review-search",
+      "path": "/reviews?q=老师",
+      "runs": [
+        {
+          "state": "cold",
+          "rowsRead": 5655,
+          "queries": 2,
+          "statements": [
+            {
+              "sql": "SELECT (SELECT COUNT(*) FROM course_reviews WHERE instr(lower(title), lower(?)) > 0 OR instr(lower(content), lower(?)) > 0) + (SELECT COUNT(*) FROM teacher_reviews WHERE instr(lower(title), lower(?)) > 0 OR instr(lower(content), lower(?)) > 0) AS total",
+              "rowsRead": 5598
+            },
+            {
+              "sql": "\n  WITH course_latest AS (\n    SELECT id, lid, title, content, posted_at_local\n    FROM course_reviews WHERE instr(lower(title), lower(?)) > 0 OR instr(lower(content), lower(?)) > 0\n    ORDER BY posted_at_local DESC, id DESC LIMIT ?\n  ), teacher_latest AS (\n    SELECT id, teacher_id, title, content, posted_at_local\n    FROM teacher_reviews WHERE instr(lower(title), lower(?)) > 0 OR instr(lower(content), lower(?)) > 0\n    ORDER BY posted_at_local DESC, id DESC LIMIT ?\n  )\n  SELECT id, review_type, lid, course_id, course_name, teacher_id, teacher_name, title, content, posted_at_local\n  FROM (\n    SELECT r.id, 'course' AS review_type, r.lid, c.course_id, c.name AS course_name,\n      NULL AS teacher_id, NULL AS teacher_name, r.title, r.content, r.posted_at_local\n    FROM course_latest AS r\n    CROSS JOIN course_section AS cs ON cs.lid = r.lid\n    CROSS JOIN courses AS c ON c.course_id = cs.course_id\n    UNION ALL\n    SELECT r.id, 'teacher' AS review_type, NULL AS lid, NULL AS course_id, NULL AS course_name,\n      t.id AS teacher_id, t.name AS teacher_name, r.title, r.content, r.posted_at_local\n    FROM teacher_latest AS r\n    CROSS JOIN teachers AS t ON t.id = r.teacher_id\n  )\n  ORDER BY posted_at_local DESC, review_type ASC, id DESC\n  LIMIT ? OFFSET ?\n",
+              "rowsRead": 57
+            }
+          ]
+        },
+        {
+          "state": "warm",
+          "rowsRead": 5655,
+          "queries": 2,
+          "statements": [
+            {
+              "sql": "SELECT (SELECT COUNT(*) FROM course_reviews WHERE instr(lower(title), lower(?)) > 0 OR instr(lower(content), lower(?)) > 0) + (SELECT COUNT(*) FROM teacher_reviews WHERE instr(lower(title), lower(?)) > 0 OR instr(lower(content), lower(?)) > 0) AS total",
+              "rowsRead": 5598
+            },
+            {
+              "sql": "\n  WITH course_latest AS (\n    SELECT id, lid, title, content, posted_at_local\n    FROM course_reviews WHERE instr(lower(title), lower(?)) > 0 OR instr(lower(content), lower(?)) > 0\n    ORDER BY posted_at_local DESC, id DESC LIMIT ?\n  ), teacher_latest AS (\n    SELECT id, teacher_id, title, content, posted_at_local\n    FROM teacher_reviews WHERE instr(lower(title), lower(?)) > 0 OR instr(lower(content), lower(?)) > 0\n    ORDER BY posted_at_local DESC, id DESC LIMIT ?\n  )\n  SELECT id, review_type, lid, course_id, course_name, teacher_id, teacher_name, title, content, posted_at_local\n  FROM (\n    SELECT r.id, 'course' AS review_type, r.lid, c.course_id, c.name AS course_name,\n      NULL AS teacher_id, NULL AS teacher_name, r.title, r.content, r.posted_at_local\n    FROM course_latest AS r\n    CROSS JOIN course_section AS cs ON cs.lid = r.lid\n    CROSS JOIN courses AS c ON c.course_id = cs.course_id\n    UNION ALL\n    SELECT r.id, 'teacher' AS review_type, NULL AS lid, NULL AS course_id, NULL AS course_name,\n      t.id AS teacher_id, t.name AS teacher_name, r.title, r.content, r.posted_at_local\n    FROM teacher_latest AS r\n    CROSS JOIN teachers AS t ON t.id = r.teacher_id\n  )\n  ORDER BY posted_at_local DESC, review_type ASC, id DESC\n  LIMIT ? OFFSET ?\n",
+              "rowsRead": 57
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "teacher-search",
+      "path": "/teachers?q=关欣",
+      "runs": [
+        {
+          "state": "cold",
+          "rowsRead": 1940,
+          "queries": 2,
+          "statements": [
+            {
+              "sql": "SELECT COUNT(*) AS total FROM teachers WHERE instr(lower(name), lower(?)) > 0",
+              "rowsRead": 970
+            },
+            {
+              "sql": "SELECT id, name FROM teachers WHERE instr(lower(name), lower(?)) > 0 ORDER BY name, id LIMIT ? OFFSET ?",
+              "rowsRead": 970
+            }
+          ]
+        },
+        {
+          "state": "warm",
+          "rowsRead": 1940,
+          "queries": 2,
+          "statements": [
+            {
+              "sql": "SELECT COUNT(*) AS total FROM teachers WHERE instr(lower(name), lower(?)) > 0",
+              "rowsRead": 970
+            },
+            {
+              "sql": "SELECT id, name FROM teachers WHERE instr(lower(name), lower(?)) > 0 ORDER BY name, id LIMIT ? OFFSET ?",
+              "rowsRead": 970
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
